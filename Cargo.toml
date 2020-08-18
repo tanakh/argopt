@@ -1,0 +1,15 @@
+[workspace]
+members = ["argopt-impl"]
+
+[package]
+name = "argopt"
+version = "0.1.0"
+authors = ["tanakh"]
+edition = "2018"
+
+[dependencies]
+argopt-impl = { path = "argopt-impl" }
+structopt = "0.3.16"
+
+[dev-dependencies]
+log = "0.4.11"
