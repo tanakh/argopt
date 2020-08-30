@@ -3,6 +3,11 @@ name = "argopt-impl"
 version = "0.1.0"
 authors = ["tanakh"]
 edition = "2018"
+license = "MIT"
+description = "Parse command line argument by defining a function."
+repository = "https://github.com/tanakh/argopt"
+categories = ["command-line-interface"]
+keywords = ["argument", "cli", "arg", "parser", "parse"]
 
 [lib]
 proc-macro = true
@@ -10,4 +15,4 @@ proc-macro = true
 [dependencies]
 darling = "0.10.2"
 quote = "1.0.7"
-syn = { version = "1.0.38", features = ["full", "extra-traits"] }
+syn = { version = "1.0.39", features = ["full", "extra-traits"] }
