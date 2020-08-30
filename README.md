@@ -1,3 +1,5 @@
+
+[![Crates.io](https://img.shields.io/crates/v/argopt.svg)](https://crates.io/crates/argopt)
 [![Workflow Status](https://github.com/tanakh/argopt/workflows/Rust/badge.svg)](https://github.com/tanakh/argopt/actions?query=workflow%3A%22Rust%22)
 
 # argopt
