@@ -109,6 +109,52 @@ fn commit(
 #[cmd_group(commands = [add, commit])]
 fn main() {}
 ```
+
+# Easy Verbosity Level Handling
+
+There is a feature that allows you to interact with the [log](https://crates.io/crates/log) crate and handle the verbosity level automatically.
+
+```
+# use argopt::cmd;
+# use log::*;
+#[cmd(verbose)]
+fn main() {
+    error!("This is error");
+    warn!("This is warn");
+    info!("This is info");
+    debug!("This is debug");
+    trace!("This is trace");
+}
+```
+
+The output is:
+
+```text
+$ cargo run
+This is error
+
+$ cargo run -- -v
+This is error
+This is warn
+
+$ cargo run -- -vv
+This is error
+This is warn
+This is info
+
+$ cargo run -- -vvv
+This is error
+This is warn
+This is info
+This is debug
+
+$ cargo run -- -vvvv
+This is error
+This is warn
+This is info
+This is debug
+This is trace
+```
 */
 
 pub use argopt_impl::{cmd, cmd_group, subcmd};
