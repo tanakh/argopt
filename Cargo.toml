@@ -17,7 +17,7 @@ keywords = ["argument", "cli", "arg", "parser", "parse"]
 github = { repository = "tanakh/argopt", workflow = "Rust" }
 
 [dependencies]
-argopt-impl = { path = "argopt-impl" }
+argopt-impl = { path = "argopt-impl", version = "0.1" }
 structopt = "0.3.16"
 
 [dev-dependencies]
