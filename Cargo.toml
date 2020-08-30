@@ -3,7 +3,7 @@ members = ["argopt-impl"]
 
 [package]
 name = "argopt"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["tanakh"]
 edition = "2018"
 license = "MIT"
