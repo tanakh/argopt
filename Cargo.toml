@@ -6,6 +6,15 @@ name = "argopt"
 version = "0.1.0"
 authors = ["tanakh"]
 edition = "2018"
+license = "MIT"
+description = "Parse command line argument by defining a function."
+repository = "https://github.com/tanakh/argopt"
+readme = "README.md"
+categories = ["command-line-interface"]
+keywords = ["argument", "cli", "arg", "parser", "parse"]
+
+[badges]
+github = { repository = "tanakh/argopt", workflow = "Rust" }
 
 [dependencies]
 argopt-impl = { path = "argopt-impl" }
