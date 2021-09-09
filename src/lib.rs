@@ -5,7 +5,7 @@ This crate provides attribute macros for command-line argument parsing.
 
 Just by adding an attribute `#[cmd]` to a function, the function is converted to a command line program.
 
-```
+```rust,ignore
 use argopt::cmd;
 
 #[cmd]
@@ -28,7 +28,7 @@ USAGE:
 
 You can customize the behavior of arguments by annotating them with attributes.
 
-```
+```rust,ignore
 use argopt::cmd;
 
 #[cmd]
@@ -44,7 +44,7 @@ fn main(
 
 And you can add help messages by adding doccomments.
 
-```
+```rust,ignore
 use argopt::cmd;
 
 /// Sample program
@@ -85,7 +85,7 @@ You can use the same options as [structopt](https://crates.io/crates/structopt).
 
 You can create sub commands by adding the attribute `#[subcmd]` to functions.
 
-```
+```rust,ignore
 use argopt::{subcmd, cmd_group};
 use std::path::PathBuf;
 
@@ -118,7 +118,7 @@ fn main() {}
 
 There is a feature that allows you to interact with the [log](https://crates.io/crates/log) crate and handle the verbosity level automatically.
 
-```
+```rust,ignore
 use argopt::cmd;
 use log::*;
 

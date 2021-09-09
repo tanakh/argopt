@@ -1,5 +1,3 @@
-use argopt::cmd;
-
 /// Simple greeting program
 #[argopt::cmd]
 fn main(
