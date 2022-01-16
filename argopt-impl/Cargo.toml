@@ -1,6 +1,6 @@
 [package]
 name = "argopt-impl"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Hideyuki Tanaka <tanaka.hideyuki@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -13,6 +13,8 @@ keywords = ["argument", "cli", "arg", "parser", "parse"]
 proc-macro = true
 
 [dependencies]
+convert_case = "0.5.0"
 darling = "0.13.0"
+proc-macro2 = "1.0.36"
 quote = "1.0.14"
 syn = { version = "1.0.85", features = ["full", "extra-traits"] }

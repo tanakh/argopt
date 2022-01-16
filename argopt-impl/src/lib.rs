@@ -9,17 +9,21 @@ use syn::{
     Attribute, AttributeArgs, FnArg, Ident, ItemFn, Meta, NestedMeta, Pat, Path, Token,
 };
 
-fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: bool) -> TokenStream {
+fn gen_cmd(item: ItemFn, is_subcmd: bool, gen_verbose: bool) -> TokenStream {
     let vis = &item.vis;
     let fn_name = &item.sig.ident;
     let ret_type = item.sig.output;
 
     let mut cmd_help = quote! {};
+    let mut app_attrs = quote! {};
     let mut fn_attrs: Vec<Attribute> = vec![];
 
     for attr in item.attrs.iter() {
         if attr.path.is_ident("doc") {
             cmd_help = quote! { #attr };
+        } else if attr.path.is_ident("opt") {
+            let tokens = &attr.tokens;
+            app_attrs = quote! { #[clap #tokens] };
         } else {
             fn_attrs.push(attr.clone());
         }
@@ -98,15 +102,9 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
         })
         .collect::<Vec<_>>();
 
-    let cmd_name = if let Some(name) = name {
-        quote! {
-            #[clap(name = #name)]
-        }
-    } else {
-        quote! {}
-    };
-
     if is_subcmd {
+        let subcmd_ctor = subcmd_ctor_name(&fn_name.to_string());
+
         quote! {
             #[doc(hidden)]
             pub mod #mod_name {
@@ -117,9 +115,9 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
                 #[derive(clap::Parser)]
                 #[allow(non_camel_case_types)]
                 pub enum #options_type {
-                    #cmd_name
                     #cmd_help
-                    Command {
+                    #app_attrs
+                    #subcmd_ctor {
                         #(
                             #arg_docs
                             #arg_attrs
@@ -140,7 +138,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
                     )*
 
                     match #opts_var_name {
-                        #mod_name::#options_type::Command{ #(#arg_idents),* } => {
+                        #mod_name::#options_type::#subcmd_ctor { #(#arg_idents),* } => {
                             #(
                                 #tmp_arg_idents = #arg_idents;
                             )*
@@ -156,61 +154,15 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
             }
         }
     } else {
-        let verbose_arg = if gen_verbose {
-            quote! {
-                #[clap(short, long, parse(from_occurrences))]
-                #[doc = "Verbose mode (-v, -vv, -vvv, etc.)"]
-                pub verbose: usize,
-            }
+        let verb = if gen_verbose {
+            VerbosityCode::new(&opts_var_name)
         } else {
-            quote! {}
+            VerbosityCode::default()
         };
 
-        let def_logger = if gen_verbose {
-            quote! {
-                struct StdoutLogger;
-
-                impl log::Log for StdoutLogger {
-                    fn enabled(&self, metadata: &log::Metadata) -> bool {
-                        metadata.level() <= log::max_level()
-                    }
-
-                    fn log(&self, record: &log::Record) {
-                        if self.enabled(record.metadata()) {
-                            println!("{}", record.args());
-                        }
-                    }
-
-                    fn flush(&self) {}
-                }
-
-                static ARGOPT_LOGGER: StdoutLogger = StdoutLogger;
-            }
-        } else {
-            quote! {}
-        };
-
-        let set_verbosity_level = if gen_verbose {
-            quote! {
-                log::set_logger(&ARGOPT_LOGGER).unwrap();
-
-                log::set_max_level(
-                    if #opts_var_name.verbose + 1 == log::LevelFilter::Error as usize {
-                        log::LevelFilter::Error
-                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Warn as usize {
-                        log::LevelFilter::Warn
-                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Info as usize {
-                        log::LevelFilter::Info
-                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Debug as usize {
-                        log::LevelFilter::Debug
-                    } else {
-                        log::LevelFilter::Trace
-                    }
-                );
-            }
-        } else {
-            quote! {}
-        };
+        let verbose_arg = verb.arg;
+        let def_logger = verb.def_logger;
+        let set_verbosity_level = verb.set_verbosity_level;
 
         quote! {
             #[doc(hidden)]
@@ -220,8 +172,8 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
 
                 #[doc(hidden)]
                 #[derive(clap::Parser)]
-                #cmd_name
                 #cmd_help
+                #app_attrs
                 #[allow(non_camel_case_types)]
                 pub struct #options_type {
                     #(
@@ -255,31 +207,79 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
     .into()
 }
 
-#[derive(Debug, Default, FromMeta)]
-#[darling(default)]
-struct SubCmdAttr {
-    name: Option<String>,
+#[derive(Default)]
+struct VerbosityCode {
+    arg: proc_macro2::TokenStream,
+    def_logger: proc_macro2::TokenStream,
+    set_verbosity_level: proc_macro2::TokenStream,
 }
 
+impl VerbosityCode {
+    fn new(opts_var_name: &Ident) -> Self {
+        Self {
+            arg: quote! {
+                #[clap(short, long, parse(from_occurrences))]
+                #[doc = "Verbose mode (-v, -vv, -vvv, etc.)"]
+                pub verbose: usize,
+            }
+            .into(),
+            def_logger: quote! {
+                struct StdoutLogger;
+
+                impl log::Log for StdoutLogger {
+                    fn enabled(&self, metadata: &log::Metadata) -> bool {
+                        metadata.level() <= log::max_level()
+                    }
+
+                    fn log(&self, record: &log::Record) {
+                        if self.enabled(record.metadata()) {
+                            println!("{}", record.args());
+                        }
+                    }
+
+                    fn flush(&self) {}
+                }
+
+                static ARGOPT_LOGGER: StdoutLogger = StdoutLogger;
+            },
+            set_verbosity_level: quote! {
+                log::set_logger(&ARGOPT_LOGGER).unwrap();
+
+                log::set_max_level(
+                    if #opts_var_name.verbose + 1 == log::LevelFilter::Error as usize {
+                        log::LevelFilter::Error
+                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Warn as usize {
+                        log::LevelFilter::Warn
+                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Info as usize {
+                        log::LevelFilter::Info
+                    } else if #opts_var_name.verbose + 1 == log::LevelFilter::Debug as usize {
+                        log::LevelFilter::Debug
+                    } else {
+                        log::LevelFilter::Trace
+                    }
+                );
+            },
+        }
+    }
+}
+
+#[derive(Debug, Default, FromMeta)]
+#[darling(default)]
+struct SubCmdAttr {}
+
 #[proc_macro_attribute]
-pub fn subcmd(attr: TokenStream, item: TokenStream) -> TokenStream {
-    let attr = parse_macro_input!(attr as AttributeArgs);
-    let attr = SubCmdAttr::from_list(&attr).unwrap();
+pub fn subcmd(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    // let attr = parse_macro_input!(attr as AttributeArgs);
+    // let attr = SubCmdAttr::from_list(&attr).unwrap();
     let item = parse_macro_input!(item as ItemFn);
-    let fn_name = &item.sig.ident;
-    gen_cmd(
-        Some(attr.name.unwrap_or_else(|| fn_name.to_string())),
-        item,
-        true,
-        false,
-    )
+    // let fn_name = &item.sig.ident;
+    gen_cmd(item, true, false)
 }
 
 #[derive(Debug, Default, FromMeta)]
 #[darling(default)]
 struct CmdAttr {
     verbose: bool,
-    name: Option<String>,
 }
 
 #[proc_macro_attribute]
@@ -287,7 +287,7 @@ pub fn cmd(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = parse_macro_input!(attr as AttributeArgs);
     let attr = CmdAttr::from_list(&attr).unwrap();
     let item = parse_macro_input!(item as ItemFn);
-    gen_cmd(attr.name, item, false, attr.verbose)
+    gen_cmd(item, false, attr.verbose)
 }
 
 fn module_name(fn_name: &str) -> Ident {
@@ -300,6 +300,11 @@ fn option_struct_name(fn_name: &str) -> Ident {
 
 fn option_var_name(fn_name: &str) -> Ident {
     parse_str(&format!("options_{}", fn_name)).unwrap()
+}
+
+fn subcmd_ctor_name(fn_name: &str) -> Ident {
+    use convert_case::{Case, Casing};
+    parse_str(&fn_name.to_case(Case::UpperCamel)).unwrap()
 }
 
 #[derive(Debug, Default)]
@@ -364,10 +369,14 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mod_name: Ident = module_name(&fn_sig.ident.to_string());
 
     let mut cmd_help = quote! {};
+    let mut app_attrs = quote! {};
 
     for fn_attr in item.attrs.iter() {
         if fn_attr.path.is_ident("doc") {
             cmd_help = quote! { #fn_attr };
+        } else if fn_attr.path.is_ident("opt") {
+            let tokens = &fn_attr.tokens;
+            app_attrs = quote! { #[clap #tokens] };
         }
     }
 
@@ -379,6 +388,7 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             #[derive(clap::Parser)]
             #cmd_help
+            #app_attrs
             #[allow(non_camel_case_types)]
             pub enum #options_type {
                 #(

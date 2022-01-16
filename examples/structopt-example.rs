@@ -2,7 +2,7 @@ use argopt::cmd;
 use std::path::PathBuf;
 
 /// A basic example
-#[cmd(name = "basic")]
+#[cmd]
 fn main(
     // A flag, true if used in the command line. Note doc comment will
     // be used for the help message of the flag. The name of the

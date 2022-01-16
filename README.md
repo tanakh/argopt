@@ -15,19 +15,34 @@ fn main(host: String, port: u16) {
 }
 ```
 
-The output is:
-
 ```text
 $ cargo run
 error: The following required arguments were not provided:
-    <host>
-    <port>
+    <HOST>
+    <PORT>
 
 USAGE:
-    argopt-test <host> <port>
+    argopt-test <HOST> <PORT>
+
+For more information try --help
 ```
 
-You can customize the behavior of arguments by annotating them with attributes.
+```text
+$ cargo run -- --help
+argopt-test 
+
+USAGE:
+    argopt-test <HOST> <PORT>
+
+ARGS:
+    <HOST>    
+    <PORT>    
+
+OPTIONS:
+    -h, --help    Print help information
+```
+
+You can customize the behavior of arguments by annotating them with `#[opt(...)]` attributes.
 
 ```rust,should_panic
 #[argopt::cmd]
@@ -58,25 +73,40 @@ fn main(
 }
 ```
 
-The output is:
+You can also use the `#[opt(...)]` attribute to customize the behavior of an application.
+
+```rust,should_panic
+/// Sample program
+#[argopt::cmd]
+#[opt(author, version, about, long_about = None)]
+fn main(
+    /// Host name
+    #[opt(short = 'h', long = "host")]
+    host: String,
+    /// Port number
+    #[opt(short, long, default_value_t = 80)]
+    port: u16,
+) {
+    // ...
+}
+```
 
 ```text
+$ cargo run -- --help
 argopt-test 0.1.0
 Sample program
 
 USAGE:
-    simple [OPTIONS] --host <host>
-
-FLAGS:
-        --help       Prints help information
-    -V, --version    Prints version information
+    argopt-test [OPTIONS] --host <HOST>
 
 OPTIONS:
-    -h, --host <host>    Host name
-    -p, --port <port>    Port number [default: 80]
+    -h, --host <HOST>    Host name
+        --help           Print help information
+    -p, --port <PORT>    Port number [default: 80]
+    -V, --version        Print version information
 ```
 
-You can use the same options as [clap::Parser](https://crates.io/crates/clap).
+The available options are the same as those of [clap::Parser](https://crates.io/crates/clap).
 
 # Subcommands
 
@@ -108,6 +138,7 @@ fn commit(
 }
 
 #[cmd_group(commands = [add, commit])]
+#[opt(author, version, about, long_about = None)]
 fn main() {}
 ```
 
@@ -128,8 +159,6 @@ fn main() {
     trace!("This is trace");
 }
 ```
-
-The output is:
 
 ```text
 $ cargo run

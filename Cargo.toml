@@ -3,7 +3,7 @@ members = ["argopt-impl"]
 
 [package]
 name = "argopt"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Hideyuki Tanaka <tanaka.hideyuki@gmail.com>"]
 edition = "2021"
 license = "MIT"
@@ -14,7 +14,7 @@ categories = ["command-line-interface"]
 keywords = ["argument", "cli", "arg", "parser", "parse"]
 
 [dependencies]
-argopt-impl = { path = "argopt-impl", version = "0.1" }
+argopt-impl = { path = "argopt-impl", version = "0.2" }
 clap = { version = "3.0.7", features = ["derive"] }
 
 [dev-dependencies]

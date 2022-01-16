@@ -35,25 +35,31 @@ fn connect(
     println!("connect to {host}:{port}");
 }
 
-/// GetOpt example
-#[subcmd(name = "getopt")]
-fn getopt_example(
-    /// output filename
-    #[opt(short, long, default_value = "stdout")]
-    output: String,
-    /// input filename
-    #[opt(short = 'c', default_value = "stdin")]
-    input: String,
-    /// library directory
-    #[opt(short = 'L', long)]
-    libdir: String,
-) {
-    println!("{output}, {input}, {libdir}");
+mod getopt {
+    use std::path::PathBuf;
+
+    /// GetOpt example
+    #[argopt::subcmd]
+    #[opt(name = "getopt")]
+    pub fn getopt_example(
+        /// output filename
+        #[opt(short, long, default_value = "stdout")]
+        output: String,
+        /// input filename
+        #[opt(short = 'c', default_value = "stdin")]
+        input: String,
+        /// library directory
+        #[opt(short = 'L', long)]
+        libdir: PathBuf,
+    ) {
+        println!("{output}, {input}, {libdir:?}");
+    }
 }
 
 /// Test program for subcommands
 #[cmd_group(
-    commands = [greet, connect, getopt_example],
+    commands = [greet, connect, getopt::getopt_example],
     verbose,
 )]
+#[opt(author, version, about, long_about = None)]
 fn main() {}
