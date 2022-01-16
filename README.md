@@ -8,7 +8,7 @@ This crate provides attribute macros for command-line argument parsing.
 
 Just by adding an attribute `#[cmd]` to a function, the function is converted to a command line program.
 
-```should_panic
+```rust,should_panic
 #[argopt::cmd]
 fn main(host: String, port: u16) {
     // ...
@@ -29,7 +29,7 @@ USAGE:
 
 You can customize the behavior of arguments by annotating them with attributes.
 
-```should_panic
+```rust,should_panic
 #[argopt::cmd]
 fn main(
     #[opt(short = 'h', long = "host")]
@@ -43,7 +43,7 @@ fn main(
 
 And you can add help messages by adding doccomments.
 
-```should_panic
+```rust,should_panic
 /// Sample program
 #[argopt::cmd]
 fn main(
@@ -82,7 +82,7 @@ You can use the same options as [clap::Parser](https://crates.io/crates/clap).
 
 You can create sub commands by adding the attribute `#[subcmd]` to functions.
 
-```should_panic
+```rust,should_panic
 use argopt::{subcmd, cmd_group};
 use std::path::PathBuf;
 
@@ -115,7 +115,7 @@ fn main() {}
 
 There is a feature that allows you to interact with the [log](https://crates.io/crates/log) crate and handle the verbosity level automatically.
 
-```
+```rust
 use argopt::cmd;
 use log::*;
 
