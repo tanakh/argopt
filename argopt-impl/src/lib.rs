@@ -218,7 +218,7 @@ impl VerbosityCode {
     fn new(opts_var_name: &Ident) -> Self {
         Self {
             arg: quote! {
-                #[clap(short, long, parse(from_occurrences))]
+                #[clap(short, long, parse(from_occurrences), global = true)]
                 #[doc = "Verbose mode (-v, -vv, -vvv, etc.)"]
                 pub verbose: usize,
             }
@@ -295,11 +295,11 @@ fn module_name(fn_name: &str) -> Ident {
 }
 
 fn option_struct_name(fn_name: &str) -> Ident {
-    parse_str(&format!("Options_{}", fn_name)).unwrap()
+    parse_str(&format!("Options_{fn_name}")).unwrap()
 }
 
 fn option_var_name(fn_name: &str) -> Ident {
-    parse_str(&format!("options_{}", fn_name)).unwrap()
+    parse_str(&format!("options_{fn_name}")).unwrap()
 }
 
 fn subcmd_ctor_name(fn_name: &str) -> Ident {
@@ -367,6 +367,8 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let options_type: Ident = parse_str("Main_options_type").unwrap();
     let mod_name: Ident = module_name(&fn_sig.ident.to_string());
+    let commands_enum: Ident = parse_str("Main_commands").unwrap();
+    let opts_var_name: Ident = parse_str("arg_Main_commands").unwrap();
 
     let mut cmd_help = quote! {};
     let mut app_attrs = quote! {};
@@ -380,6 +382,16 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     }
 
+    let verb = if attr.verbose {
+        VerbosityCode::new(&opts_var_name)
+    } else {
+        VerbosityCode::default()
+    };
+
+    let verbose_arg = verb.arg;
+    let def_logger = verb.def_logger;
+    let set_verbosity_level = verb.set_verbosity_level;
+
     (quote! {
         #[doc(hidden)]
         pub mod #mod_name {
@@ -390,7 +402,15 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
             #cmd_help
             #app_attrs
             #[allow(non_camel_case_types)]
-            pub enum #options_type {
+            pub struct #options_type {
+                #verbose_arg
+
+                #[clap(subcommand)]
+                pub commands: #commands_enum
+            }
+
+            #[derive(clap::Subcommand)]
+            pub enum #commands_enum {
                 #(
                     #[clap(flatten)]
                     #constr_names(#struct_names),
@@ -398,12 +418,18 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
 
+        #def_logger
+
         #vis #fn_sig {
             #body
 
-            match <#mod_name::#options_type as argopt::clap::Parser>::parse() {
+            let #opts_var_name = <#mod_name::#options_type as argopt::clap::Parser>::parse();
+
+            #set_verbosity_level
+
+            match #opts_var_name.commands {
                 #(
-                    #mod_name::#options_type::#constr_names(opts) => #cmds(opts),
+                    #mod_name::#commands_enum::#constr_names(opts) => #cmds(opts),
                 )*
             }
         }

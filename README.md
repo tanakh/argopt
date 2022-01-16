@@ -186,3 +186,12 @@ This is info
 This is debug
 This is trace
 ```
+
+You can also use `verbose` option to subcommand application.
+
+```rust,ignore
+...
+
+#[cmd_group(commands = [add, commit], verbose)]
+fn main() {}
+```
