@@ -66,7 +66,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
             assert!(pat_ident.by_ref.is_none());
             assert!(pat_ident.subpat.is_none());
 
-            arg_muts.push(pat_ident.mutability.clone());
+            arg_muts.push(pat_ident.mutability);
             arg_idents.push(pat_ident.ident.clone());
             tmp_arg_idents
                 .push(parse_str::<Ident>(&format!("tmp_var_{}", pat_ident.ident)).unwrap());
@@ -268,7 +268,7 @@ pub fn subcmd(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as ItemFn);
     let fn_name = &item.sig.ident;
     gen_cmd(
-        Some(attr.name.unwrap_or(fn_name.to_string())),
+        Some(attr.name.unwrap_or_else(|| fn_name.to_string())),
         item,
         true,
         false,
