@@ -8,5 +8,5 @@ fn main(
     //
     name: String,
 ) {
-    println!("{}, {}!", message, name);
+    println!("{message}, {name}!");
 }

@@ -13,9 +13,9 @@ fn greet(
     #[opt(name = "NAME")]
     name: String,
 ) {
-    let msg = format!("{}, {}!", greet, name);
+    let msg = format!("{greet}, {name}!");
     let msg = if decolate {
-        format!("*** {} ***", msg)
+        format!("*** {msg} ***")
     } else {
         msg
     };
@@ -32,7 +32,7 @@ fn connect(
     #[opt(long, default_value_t = 8080)]
     port: i16,
 ) {
-    println!("connect to {}:{}", host, port);
+    println!("connect to {host}:{port}");
 }
 
 /// GetOpt example
@@ -48,7 +48,7 @@ fn getopt_example(
     #[opt(short = 'L', long)]
     libdir: String,
 ) {
-    println!("{}, {}, {}", output, input, libdir);
+    println!("{output}, {input}, {libdir}");
 }
 
 /// Test program for subcommands
