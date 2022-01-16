@@ -80,6 +80,8 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
 
     let body = &item.block;
 
+    let mod_name = module_name(&fn_name.to_string());
+
     let options_type = option_struct_name(&fn_name.to_string());
     let opts_var_name = option_var_name(&fn_name.to_string());
 
@@ -90,7 +92,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
                 quote! {}
             } else {
                 quote! {
-                    #[structopt( #( #attrs ),* )]
+                    #[clap( #( #attrs ),* )]
                 }
             }
         })
@@ -98,7 +100,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
 
     let cmd_name = if let Some(name) = name {
         quote! {
-            #[structopt(name = #name)]
+            #[clap(name = #name)]
         }
     } else {
         quote! {}
@@ -107,20 +109,27 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
     if is_subcmd {
         quote! {
             #[doc(hidden)]
-            #[derive(argopt::StructOpt)]
-            pub enum #options_type {
-                #cmd_name
-                #cmd_help
-                Command {
-                    #(
-                        #arg_docs
-                        #arg_attrs
-                        #arg_idents: #arg_types,
-                    )*
+            pub mod #mod_name {
+                use argopt::clap;
+                use super::*;
+
+                #[doc(hidden)]
+                #[derive(clap::Parser)]
+                #[allow(non_camel_case_types)]
+                pub enum #options_type {
+                    #cmd_name
+                    #cmd_help
+                    Command {
+                        #(
+                            #arg_docs
+                            #arg_attrs
+                            #arg_idents: #arg_types,
+                        )*
+                    }
                 }
             }
 
-            #vis fn #fn_name (#opts_var_name: #options_type) #ret_type {
+            #vis fn #fn_name (#opts_var_name: #mod_name::#options_type) #ret_type {
                 #(
                     let #arg_muts #arg_idents;
                 )*
@@ -131,7 +140,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
                     )*
 
                     match #opts_var_name {
-                        #options_type::Command{ #(#arg_idents),* } => {
+                        #mod_name::#options_type::Command{ #(#arg_idents),* } => {
                             #(
                                 #tmp_arg_idents = #arg_idents;
                             )*
@@ -149,9 +158,9 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
     } else {
         let verbose_arg = if gen_verbose {
             quote! {
-                #[structopt(short, long, parse(from_occurrences))]
+                #[clap(short, long, parse(from_occurrences))]
                 #[doc = "Verbose mode (-v, -vv, -vvv, etc.)"]
-                verbose: usize,
+                pub verbose: usize,
             }
         } else {
             quote! {}
@@ -205,16 +214,23 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
 
         quote! {
             #[doc(hidden)]
-            #[derive(argopt::StructOpt)]
-            #cmd_name
-            #cmd_help
-            pub struct #options_type {
-                #(
-                    #arg_docs
-                    #arg_attrs
-                    #arg_idents: #arg_types,
-                )*
-                #verbose_arg
+            pub mod #mod_name {
+                use argopt::clap;
+                use super::*;
+
+                #[doc(hidden)]
+                #[derive(clap::Parser)]
+                #cmd_name
+                #cmd_help
+                #[allow(non_camel_case_types)]
+                pub struct #options_type {
+                    #(
+                        #arg_docs
+                        #arg_attrs
+                        pub #arg_idents: #arg_types,
+                    )*
+                    #verbose_arg
+                }
             }
 
             #def_logger
@@ -225,7 +241,7 @@ fn gen_cmd(name: Option<String>, item: ItemFn, is_subcmd: bool, gen_verbose: boo
                 )*
 
                 {
-                    let #opts_var_name = <#options_type as argopt::StructOpt>::from_args();
+                    let #opts_var_name = <#mod_name::#options_type as argopt::clap::Parser>::parse();
                     #(
                         #arg_idents = #opts_var_name.#arg_idents;
                     )*
@@ -272,6 +288,10 @@ pub fn cmd(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = CmdAttr::from_list(&attr).unwrap();
     let item = parse_macro_input!(item as ItemFn);
     gen_cmd(attr.name, item, false, attr.verbose)
+}
+
+fn module_name(fn_name: &str) -> Ident {
+    parse_str(&format!("__{fn_name}__impl")).unwrap()
 }
 
 fn option_struct_name(fn_name: &str) -> Ident {
@@ -333,11 +353,15 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
 
         let ident = option_struct_name(&cmd.segments.last().unwrap().ident.to_string());
         let mut cmd = cmd.clone();
-        cmd.segments.last_mut().unwrap().ident = ident;
+        let last = cmd.segments.pop().unwrap();
+        let mod_name = module_name(&last.value().ident.to_string());
+        cmd.segments.push(mod_name.into());
+        cmd.segments.push(ident.into());
         struct_names.push(cmd);
     }
 
     let options_type: Ident = parse_str("Main_options_type").unwrap();
+    let mod_name: Ident = module_name(&fn_sig.ident.to_string());
 
     let mut cmd_help = quote! {};
 
@@ -348,21 +372,28 @@ pub fn cmd_group(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     (quote! {
-        #[derive(argopt::StructOpt)]
-        #cmd_help
-        enum #options_type {
-            #(
-                #[structopt(flatten)]
-                #constr_names(#struct_names),
-            )*
+        #[doc(hidden)]
+        pub mod #mod_name {
+            use argopt::clap;
+            use super::*;
+
+            #[derive(clap::Parser)]
+            #cmd_help
+            #[allow(non_camel_case_types)]
+            pub enum #options_type {
+                #(
+                    #[clap(flatten)]
+                    #constr_names(#struct_names),
+                )*
+            }
         }
 
         #vis #fn_sig {
             #body
 
-            match <#options_type as argopt::StructOpt>::from_args() {
+            match <#mod_name::#options_type as argopt::clap::Parser>::parse() {
                 #(
-                    #options_type::#constr_names(opts) => #cmds(opts),
+                    #mod_name::#options_type::#constr_names(opts) => #cmds(opts),
                 )*
             }
         }

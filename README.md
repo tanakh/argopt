@@ -2,18 +2,14 @@
 [![Crates.io](https://img.shields.io/crates/v/argopt.svg)](https://crates.io/crates/argopt)
 [![Workflow Status](https://github.com/tanakh/argopt/workflows/Rust/badge.svg)](https://github.com/tanakh/argopt/actions?query=workflow%3A%22Rust%22)
 
-# argopt
-
 This crate provides attribute macros for command-line argument parsing.
 
-## Usage
+# Usage
 
 Just by adding an attribute `#[cmd]` to a function, the function is converted to a command line program.
 
-```rust
-use argopt::cmd;
-
-#[cmd]
+```should_panic
+#[argopt::cmd]
 fn main(host: String, port: u16) {
     // ...
 }
@@ -21,7 +17,7 @@ fn main(host: String, port: u16) {
 
 The output is:
 
-```
+```text
 $ cargo run
 error: The following required arguments were not provided:
     <host>
@@ -33,14 +29,12 @@ USAGE:
 
 You can customize the behavior of arguments by annotating them with attributes.
 
-```rust
-use argopt::cmd;
-
-#[cmd]
+```should_panic
+#[argopt::cmd]
 fn main(
-    #[opt(short = "h", long = "host")]
+    #[opt(short = 'h', long = "host")]
     host: String,
-    #[opt(short, long, default_value = "80")]
+    #[opt(short, long, default_value_t = 80)]
     port: u16,
 ) {
     // ...
@@ -49,17 +43,15 @@ fn main(
 
 And you can add help messages by adding doccomments.
 
-```rust
-use argopt::cmd;
-
+```should_panic
 /// Sample program
-#[cmd]
+#[argopt::cmd]
 fn main(
     /// Host name
-    #[opt(short = "h", long = "host")]
+    #[opt(short = 'h', long = "host")]
     host: String,
     /// Port number
-    #[opt(short, long, default_value = "80")]
+    #[opt(short, long, default_value_t = 80)]
     port: u16,
 ) {
     // ...
@@ -68,7 +60,7 @@ fn main(
 
 The output is:
 
-```
+```text
 argopt-test 0.1.0
 Sample program
 
@@ -84,13 +76,13 @@ OPTIONS:
     -p, --port <port>    Port number [default: 80]
 ```
 
-You can use the same options as [structopt](https://crates.io/crates/structopt).
+You can use the same options as [clap::Parser](https://crates.io/crates/clap).
 
-## Subcommands
+# Subcommands
 
 You can create sub commands by adding the attribute `#[subcmd]` to functions.
 
-```rust
+```should_panic
 use argopt::{subcmd, cmd_group};
 use std::path::PathBuf;
 
@@ -119,11 +111,11 @@ fn commit(
 fn main() {}
 ```
 
-## Easy Verbosity Level Handling
+# Easy Verbosity Level Handling
 
 There is a feature that allows you to interact with the [log](https://crates.io/crates/log) crate and handle the verbosity level automatically.
 
-```rust
+```
 use argopt::cmd;
 use log::*;
 
@@ -139,7 +131,7 @@ fn main() {
 
 The output is:
 
-```
+```text
 $ cargo run
 This is error
 
@@ -165,5 +157,3 @@ This is info
 This is debug
 This is trace
 ```
-
-License: MIT

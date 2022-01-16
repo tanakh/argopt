@@ -26,10 +26,10 @@ fn greet(
 #[subcmd]
 fn connect(
     /// host name
-    #[opt(short, long, default_value = "localhost")]
+    #[opt(long, default_value = "localhost")]
     host: String,
     /// port number
-    #[opt(short, long, default_value = "8080")]
+    #[opt(long, default_value_t = 8080)]
     port: i16,
 ) {
     println!("connect to {}:{}", host, port);
@@ -42,10 +42,10 @@ fn getopt_example(
     #[opt(short, long, default_value = "stdout")]
     output: String,
     /// input filename
-    #[opt(short = "c", default_value = "stdin")]
+    #[opt(short = 'c', default_value = "stdin")]
     input: String,
     /// library directory
-    #[opt(short = "L", long)]
+    #[opt(short = 'L', long)]
     libdir: String,
 ) {
     println!("{}, {}, {}", output, input, libdir);

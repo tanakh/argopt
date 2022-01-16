@@ -17,7 +17,7 @@ fn main(
     verbose: u8,
 
     /// Set speed
-    #[opt(short, long, default_value = "42")]
+    #[opt(short, long, default_value_t = 42.0)]
     speed: f64,
 
     /// Output file
@@ -27,7 +27,7 @@ fn main(
     // the long option will be translated by default to kebab case,
     // i.e. `--nb-cars`.
     /// Number of cars
-    #[opt(short = "c", long)]
+    #[opt(short = 'c', long)]
     nb_cars: Option<i32>,
 
     /// admin_level to consider

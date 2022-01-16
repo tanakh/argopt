@@ -4,8 +4,8 @@ members = ["argopt-impl"]
 [package]
 name = "argopt"
 version = "0.1.1"
-authors = ["tanakh"]
-edition = "2018"
+authors = ["Hideyuki Tanaka <tanaka.hideyuki@gmail.com>"]
+edition = "2021"
 license = "MIT"
 description = "Parse command line argument by defining a function."
 repository = "https://github.com/tanakh/argopt"
@@ -13,12 +13,9 @@ readme = "README.md"
 categories = ["command-line-interface"]
 keywords = ["argument", "cli", "arg", "parser", "parse"]
 
-[badges]
-github = { repository = "tanakh/argopt", workflow = "Rust" }
-
 [dependencies]
 argopt-impl = { path = "argopt-impl", version = "0.1" }
-structopt = "0.3.17"
+clap = { version = "3.0.7", features = ["derive"] }
 
 [dev-dependencies]
 log = "0.4.11"
