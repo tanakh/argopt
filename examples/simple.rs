@@ -5,7 +5,6 @@ fn main(
     #[opt(short, long, default_value = "Hello")]
     message: String,
     /// your name
-    //
     name: String,
 ) {
     println!("{message}, {name}!");

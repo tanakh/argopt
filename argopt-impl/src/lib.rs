@@ -11,8 +11,9 @@ use syn::{
 
 fn gen_cmd(item: ItemFn, is_subcmd: bool, gen_verbose: bool) -> TokenStream {
     let vis = &item.vis;
+    let fn_async = &item.sig.asyncness;
     let fn_name = &item.sig.ident;
-    let ret_type = item.sig.output;
+    let ret_type = &item.sig.output;
 
     let mut cmd_help = quote! {};
     let mut app_attrs = quote! {};
@@ -127,7 +128,8 @@ fn gen_cmd(item: ItemFn, is_subcmd: bool, gen_verbose: bool) -> TokenStream {
                 }
             }
 
-            #vis fn #fn_name (#opts_var_name: #mod_name::#options_type) #ret_type {
+            #(#fn_attrs)*
+            #vis #fn_async fn #fn_name (#opts_var_name: #mod_name::#options_type) #ret_type {
                 #(
                     let #arg_muts #arg_idents;
                 )*
@@ -187,7 +189,8 @@ fn gen_cmd(item: ItemFn, is_subcmd: bool, gen_verbose: bool) -> TokenStream {
 
             #def_logger
 
-            #vis fn #fn_name () #ret_type {
+            #(#fn_attrs)*
+            #vis #fn_async fn #fn_name () #ret_type {
                 #(
                     let #arg_muts #arg_idents;
                 )*
