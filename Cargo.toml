@@ -14,7 +14,7 @@ categories = ["command-line-interface"]
 keywords = ["argument", "cli", "arg", "parser", "parse"]
 
 [dependencies]
-argopt-impl = { path = "argopt-impl", version = "0.2.0" }
+argopt-impl = { path = "argopt-impl", version = "^0.3.0"}
 clap = { version = "3.0.7", features = ["derive"] }
 
 [dev-dependencies]

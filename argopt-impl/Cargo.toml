@@ -1,6 +1,6 @@
 [package]
 name = "argopt-impl"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Hideyuki Tanaka <tanaka.hideyuki@gmail.com>"]
 edition = "2021"
 license = "MIT"
